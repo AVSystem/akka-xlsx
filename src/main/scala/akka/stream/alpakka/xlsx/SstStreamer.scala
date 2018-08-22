@@ -1,37 +1,57 @@
 package akka.stream.alpakka.xlsx
 
-import java.io.InputStream
 import java.util.zip.ZipFile
 
 import akka.stream.Materializer
 import akka.stream.alpakka.xml.scaladsl.XmlParsing
-import akka.stream.alpakka.xml.{ Characters, EndElement, ParseEvent, StartElement }
-import akka.stream.scaladsl.{ Keep, Sink, Source, StreamConverters }
+import akka.stream.alpakka.xml.{Characters, EndElement, ParseEvent, StartElement}
+import akka.stream.contrib.ZipInputStreamSource.ZipEntryData
+import akka.stream.scaladsl.{Keep, Sink, Source, StreamConverters}
+import akka.util.ByteString
 
 import scala.concurrent.Future
 
 object SstStreamer {
 
+  private final val EntryName = "xl/sharedStrings.xml"
+  private val defaultSink = Sink.fold[Map[Int, String], (Int, String)](Map.empty)((v1, v2) => v1 + v2)
+
+
   def readSst(zipFile: ZipFile)(implicit materializer: Materializer): Future[Map[Int, String]] = {
-    readSst(zipFile, Sink.fold(Map.empty[Int, String])((v1, v2) => v1 + v2))
+    readSst(zipFile, defaultSink)
   }
 
   def readSst(
       zipFile: ZipFile,
       mapSink: Sink[(Int, String), Future[Map[Int, String]]]
   )(implicit materializer: Materializer): Future[Map[Int, String]] = {
-    Option(zipFile.getEntry("xl/sharedStrings.xml")) match {
-      case Some(entry) => read(zipFile.getInputStream(entry), mapSink)
+    Option(zipFile.getEntry(EntryName)) match {
+      case Some(entry) => read(StreamConverters.fromInputStream(() => zipFile.getInputStream(entry)), mapSink)
       case None        => Source.empty[(Int, String)].toMat(mapSink)(Keep.right).run()
     }
   }
 
+
+  def readSst(source: Iterable[(ZipEntryData, ByteString)])(implicit materializer: Materializer): Future[Map[Int, String]] = {
+    readSst(source, defaultSink)
+  }
+
+  def readSst(
+      source: Iterable[(ZipEntryData, ByteString)],
+      mapSink: Sink[(Int, String), Future[Map[Int, String]]]
+  )(implicit materializer: Materializer): Future[Map[Int, String]] = {
+    read(
+      Source.fromIterator(() => source.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes }.iterator),
+      mapSink
+    )
+  }
+
+
   private def read(
-      inputStream: InputStream,
+      inputSource: Source[ByteString, _],
       mapSink: Sink[(Int, String), Future[Map[Int, String]]]
   )(implicit materializer: Materializer) = {
-    StreamConverters
-      .fromInputStream(() => inputStream)
+    inputSource
       .via(XmlParsing.parser)
       .statefulMapConcat[(Int, String)](() => {
         var count                              = 0
