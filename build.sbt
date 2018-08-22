@@ -2,8 +2,9 @@ import ReleaseTransformations._
 
 name := "akka-xlsx"
 
-lazy val AkkaVersion       = "2.5.12"
-lazy val AlpakkaXmlVersion = "0.19"
+lazy val AkkaVersion        = "2.5.12"
+lazy val AkkaContribVersion = "0.9"
+lazy val AlpakkaXmlVersion  = "0.19"
 
 lazy val commonSettings = Seq(
   updateOptions := updateOptions.value.withGigahorse(false),
@@ -30,6 +31,7 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       "com.typesafe.akka"  %% "akka-stream"             % AkkaVersion,
       "com.lightbend.akka" %% "akka-stream-alpakka-xml" % AlpakkaXmlVersion,
+      "com.typesafe.akka" %% "akka-stream-contrib"      % AkkaContribVersion,
       "com.typesafe.akka"  %% "akka-stream-testkit"     % AkkaVersion % Test
     )
   )
