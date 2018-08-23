@@ -25,10 +25,9 @@ object WorkbookStreamer {
   }
 
   def readWorkbook(source: Iterable[(ZipEntryData, ByteString)])(implicit materializer: Materializer): Future[Map[String, Int]] = {
-    Option(source.iterator.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes })
-      .filter(_.nonEmpty)
-      .map(entry => read(Source.fromIterator(() => entry)))
-      .getOrElse(Future.failed(new FileNotFoundException(WorkbookNotFoundExceptionMsg)))
+    val filteredIterator = source.iterator.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes }
+    if (filteredIterator.isEmpty) Future.failed(new FileNotFoundException(WorkbookNotFoundExceptionMsg))
+    else read(Source.fromIterator(() => filteredIterator))
   }
 
 

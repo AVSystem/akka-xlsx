@@ -16,7 +16,7 @@ import scala.util.Try
 object StyleStreamer {
 
   private final val EntryName = "xl/styles.xml"
-  private[xlsx] val defaultSink = Sink.seq[(Int, Int)].mapMaterializedValue(_.map(_.toMap)(ExecutionContext.fromExecutor(_.run())))
+  private val defaultSink = Sink.seq[(Int, Int)].mapMaterializedValue(_.map(_.toMap)(ExecutionContext.fromExecutor(_.run())))
 
   def readStyles(zipFile: ZipFile)(implicit materializer: Materializer): Future[Map[Int, Int]] = {
     readStyles(zipFile, defaultSink)

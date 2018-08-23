@@ -162,9 +162,9 @@ object XlsxParsing {
         val optionalSheetName = sheetEntryName(sheetType, workbook)
         zipEntries.map { source =>
           Source.fromIterator(() => {
-            Option(source.iterator.collect { case (zipEntry, bytes) if optionalSheetName.contains(zipEntry.name) => bytes })
-              .filter(_.nonEmpty)
-              .getOrElse(throw new FileNotFoundException(worksheetNotFoundExceptionMsg(sheetType)))
+            val filteredIterator = source.iterator.collect { case (zipEntry, bytes) if optionalSheetName.contains(zipEntry.name) => bytes }
+            if (filteredIterator.isEmpty) throw new FileNotFoundException(worksheetNotFoundExceptionMsg(sheetType))
+            filteredIterator
           })
         }
       }
