@@ -1,30 +1,38 @@
 package akka.stream.alpakka.xlsx
 
-import java.io.InputStream
+import java.io.FileNotFoundException
 import java.util.zip.ZipFile
 
 import akka.stream.Materializer
-import akka.stream.alpakka.xml.{ EndElement, ParseEvent, StartElement }
 import akka.stream.alpakka.xml.javadsl.XmlParsing
-import akka.stream.scaladsl.StreamConverters
+import akka.stream.alpakka.xml.{EndElement, ParseEvent, StartElement}
+import akka.stream.contrib.ZipInputStreamSource.ZipEntryData
+import akka.stream.scaladsl.{Source, StreamConverters}
+import akka.util.ByteString
 
 import scala.concurrent.Future
 import scala.util.Try
 
 object WorkbookStreamer {
 
-  def readWorkbook(file: ZipFile)(implicit materializer: Materializer): Future[Map[String, Int]] = {
-    Option(file.getEntry("xl/workbook.xml")) match {
-      case Some(entry) => read(file.getInputStream(entry))
-      case None        => Future.failed(new Exception("invalid xlsx file"))
-    }
+  private final val EntryName = "xl/workbook.xml"
+  private final val WorkbookNotFoundExceptionMsg = "Workbook entry could not be found."
+
+  def readWorkbook(zipFile: ZipFile)(implicit materializer: Materializer): Future[Map[String, Int]] = {
+    Option(zipFile.getEntry(EntryName))
+      .map(entry => read(StreamConverters.fromInputStream(() => zipFile.getInputStream(entry))))
+      .getOrElse(Future.failed(new FileNotFoundException(WorkbookNotFoundExceptionMsg)))
   }
 
-  private def read(
-      inputStream: InputStream
-  )(implicit materializer: Materializer): Future[Map[String, Int]] = {
-    StreamConverters
-      .fromInputStream(() => inputStream)
+  def readWorkbook(source: Iterable[(ZipEntryData, ByteString)])(implicit materializer: Materializer): Future[Map[String, Int]] = {
+    val filteredIterator = source.iterator.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes }
+    if (filteredIterator.isEmpty) Future.failed(new FileNotFoundException(WorkbookNotFoundExceptionMsg))
+    else read(Source.fromIterator(() => filteredIterator))
+  }
+
+
+  private def read(inputSource: Source[ByteString, _])(implicit materializer: Materializer): Future[Map[String, Int]] = {
+    inputSource
       .via(XmlParsing.parser)
       .statefulMapConcat[(String, Int)](() => {
         var insideSheets: Boolean = false
