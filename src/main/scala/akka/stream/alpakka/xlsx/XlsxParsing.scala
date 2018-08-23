@@ -18,14 +18,12 @@ import scala.util.Try
 
 object XlsxParsing {
 
-  private val defaultSink = Sink.fold[Map[Int, String], (Int, String)](Map.empty)((v1, v2) => v1 + v2)
-
   def fromZipFile(file: ZipFile, sheetId: Int)(implicit materializer: Materializer): Source[Row, NotUsed] = {
-    fromZipFile(file, sheetId, defaultSink)
+    fromZipFile(file, sheetId, SstStreamer.defaultSink)
   }
 
   def fromZipFile(file: ZipFile, sheetName: String)(implicit materializer: Materializer): Source[Row, NotUsed] = {
-    fromZipFile(file, sheetName, defaultSink)
+    fromZipFile(file, sheetName, SstStreamer.defaultSink)
   }
 
   def fromZipFile(
@@ -48,14 +46,14 @@ object XlsxParsing {
       source: Source[ByteString, _],
       sheetId: Int
   )(implicit materializer: Materializer, executionContext: ExecutionContext): Source[Row, NotUsed] = {
-    fromStream(source, sheetId, defaultSink)
+    fromStream(source, sheetId, SstStreamer.defaultSink)
   }
 
   def fromStream(
       source: Source[ByteString, _],
       sheetName: String
   )(implicit materializer: Materializer, executionContext: ExecutionContext): Source[Row, NotUsed] = {
-    fromStream(source, sheetName, defaultSink)
+    fromStream(source, sheetName, SstStreamer.defaultSink)
   }
 
   def fromStream(

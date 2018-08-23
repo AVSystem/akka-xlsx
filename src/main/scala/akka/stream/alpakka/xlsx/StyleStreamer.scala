@@ -10,13 +10,13 @@ import akka.stream.scaladsl.{Keep, Sink, Source, StreamConverters}
 import akka.util.ByteString
 
 import scala.collection.mutable
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object StyleStreamer {
 
   private final val EntryName = "xl/styles.xml"
-  private val defaultSink = Sink.fold[Map[Int, Int], (Int, Int)](Map.empty)((v1, v2) => v1 + v2)
+  private[xlsx] val defaultSink = Sink.seq[(Int, Int)].mapMaterializedValue(_.map(_.toMap)(ExecutionContext.fromExecutor(_.run())))
 
   def readStyles(zipFile: ZipFile)(implicit materializer: Materializer): Future[Map[Int, Int]] = {
     readStyles(zipFile, defaultSink)

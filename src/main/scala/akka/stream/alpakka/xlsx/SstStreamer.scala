@@ -9,12 +9,13 @@ import akka.stream.contrib.ZipInputStreamSource.ZipEntryData
 import akka.stream.scaladsl.{Keep, Sink, Source, StreamConverters}
 import akka.util.ByteString
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object SstStreamer {
 
   private final val EntryName = "xl/sharedStrings.xml"
-  private val defaultSink = Sink.fold[Map[Int, String], (Int, String)](Map.empty)((v1, v2) => v1 + v2)
+  private[xlsx] val defaultSink = Sink.seq[(Int, String)].mapMaterializedValue(_.map(_.toMap)(ExecutionContext.fromExecutor(_.run())))
+
 
   def readSst(zipFile: ZipFile)(implicit materializer: Materializer): Future[Map[Int, String]] = {
     readSst(zipFile, defaultSink)
