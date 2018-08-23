@@ -18,7 +18,6 @@ object StyleStreamer {
   private final val EntryName = "xl/styles.xml"
   private val defaultSink = Sink.fold[Map[Int, Int], (Int, Int)](Map.empty)((v1, v2) => v1 + v2)
 
-
   def readStyles(zipFile: ZipFile)(implicit materializer: Materializer): Future[Map[Int, Int]] = {
     readStyles(zipFile, defaultSink)
   }
@@ -33,7 +32,6 @@ object StyleStreamer {
     }
   }
 
-
   def readStyles(source: Iterable[(ZipEntryData, ByteString)])(implicit materializer: Materializer): Future[Map[Int, Int]] = {
     readStyles(source, defaultSink)
   }
@@ -43,7 +41,7 @@ object StyleStreamer {
       mapSink: Sink[(Int, Int), Future[Map[Int, Int]]]
   )(implicit materializer: Materializer): Future[Map[Int, Int]] = {
     read(
-      Source.fromIterator(() => source.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes }.iterator),
+      Source.fromIterator(() => source.iterator.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes }),
       mapSink
     )
   }

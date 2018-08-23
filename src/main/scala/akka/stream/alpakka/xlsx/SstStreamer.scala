@@ -16,7 +16,6 @@ object SstStreamer {
   private final val EntryName = "xl/sharedStrings.xml"
   private val defaultSink = Sink.fold[Map[Int, String], (Int, String)](Map.empty)((v1, v2) => v1 + v2)
 
-
   def readSst(zipFile: ZipFile)(implicit materializer: Materializer): Future[Map[Int, String]] = {
     readSst(zipFile, defaultSink)
   }
@@ -31,7 +30,6 @@ object SstStreamer {
     }
   }
 
-
   def readSst(source: Iterable[(ZipEntryData, ByteString)])(implicit materializer: Materializer): Future[Map[Int, String]] = {
     readSst(source, defaultSink)
   }
@@ -41,7 +39,7 @@ object SstStreamer {
       mapSink: Sink[(Int, String), Future[Map[Int, String]]]
   )(implicit materializer: Materializer): Future[Map[Int, String]] = {
     read(
-      Source.fromIterator(() => source.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes }.iterator),
+      Source.fromIterator(() => source.iterator.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes }),
       mapSink
     )
   }

@@ -20,7 +20,6 @@ object XlsxParsing {
 
   private val defaultSink = Sink.fold[Map[Int, String], (Int, String)](Map.empty)((v1, v2) => v1 + v2)
 
-
   def fromZipFile(file: ZipFile, sheetId: Int)(implicit materializer: Materializer): Source[Row, NotUsed] = {
     fromZipFile(file, sheetId, defaultSink)
   }
@@ -44,7 +43,6 @@ object XlsxParsing {
   )(implicit materializer: Materializer): Source[Row, NotUsed] = {
     readFromFile(file, SheetType.Name(sheetName), sstSink)
   }
-
 
   def fromStream(
       source: Source[ByteString, _],
@@ -128,7 +126,6 @@ object XlsxParsing {
 
   private def worksheetNotFoundExceptionMsg(sheetType: SheetType) = s"Workbook sheet $sheetType could not be found"
 
-
   private def readFromFile(
       file: ZipFile,
       sheetType: SheetType,
@@ -167,7 +164,7 @@ object XlsxParsing {
         val optionalSheetName = sheetEntryName(sheetType, workbook)
         zipEntries.map { source =>
           Source.fromIterator(() => {
-            val filteredIterator = source.collect { case (zipEntry, bytes) if optionalSheetName.contains(zipEntry.name) => bytes }.iterator
+            val filteredIterator = source.iterator.collect { case (zipEntry, bytes) if optionalSheetName.contains(zipEntry.name) => bytes }
             if (filteredIterator.isEmpty) throw new FileNotFoundException(worksheetNotFoundExceptionMsg(sheetType))
             filteredIterator
           })
