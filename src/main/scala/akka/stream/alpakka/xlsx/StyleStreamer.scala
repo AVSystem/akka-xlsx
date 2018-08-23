@@ -26,10 +26,9 @@ object StyleStreamer {
       zipFile: ZipFile,
       mapSink: Sink[(Int, Int), Future[Map[Int, Int]]]
   )(implicit materializer: Materializer): Future[Map[Int, Int]] = {
-    Option(zipFile.getEntry(EntryName)) match {
-      case Some(entry) => read(StreamConverters.fromInputStream(() => zipFile.getInputStream(entry)), mapSink)
-      case None        => Source.empty[(Int, Int)].toMat(mapSink)(Keep.right).run()
-    }
+    Option(zipFile.getEntry(EntryName))
+      .map(entry => read(StreamConverters.fromInputStream(() => zipFile.getInputStream(entry)), mapSink))
+      .getOrElse(Future.successful(Map.empty))
   }
 
   def readStyles(source: Iterable[(ZipEntryData, ByteString)])(implicit materializer: Materializer): Future[Map[Int, Int]] = {

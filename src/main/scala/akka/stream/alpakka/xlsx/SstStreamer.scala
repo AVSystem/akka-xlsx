@@ -24,10 +24,9 @@ object SstStreamer {
       zipFile: ZipFile,
       mapSink: Sink[(Int, String), Future[Map[Int, String]]]
   )(implicit materializer: Materializer): Future[Map[Int, String]] = {
-    Option(zipFile.getEntry(EntryName)) match {
-      case Some(entry) => read(StreamConverters.fromInputStream(() => zipFile.getInputStream(entry)), mapSink)
-      case None        => Source.empty[(Int, String)].toMat(mapSink)(Keep.right).run()
-    }
+    Option(zipFile.getEntry(EntryName))
+      .map(entry => read(StreamConverters.fromInputStream(() => zipFile.getInputStream(entry)), mapSink))
+      .getOrElse(Future.successful(Map.empty))
   }
 
   def readSst(source: Iterable[(ZipEntryData, ByteString)])(implicit materializer: Materializer): Future[Map[Int, String]] = {

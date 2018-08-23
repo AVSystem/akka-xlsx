@@ -1,5 +1,6 @@
 package akka.stream.alpakka.xlsx
 
+import java.io.FileNotFoundException
 import java.util.zip.ZipFile
 
 import akka.stream.Materializer
@@ -15,21 +16,19 @@ import scala.util.Try
 object WorkbookStreamer {
 
   private final val EntryName = "xl/workbook.xml"
-  private final val InvalidFileExceptionMsg = "Invalid xlsx file - no workbook entry"
+  private final val WorkbookNotFoundExceptionMsg = "Workbook entry could not be found."
 
   def readWorkbook(zipFile: ZipFile)(implicit materializer: Materializer): Future[Map[String, Int]] = {
-    Option(zipFile.getEntry(EntryName)) match {
-      case Some(entry) => read(StreamConverters.fromInputStream(() => zipFile.getInputStream(entry)))
-      case None        => Future.failed(new Exception(InvalidFileExceptionMsg))
-    }
+    Option(zipFile.getEntry(EntryName))
+      .map(entry => read(StreamConverters.fromInputStream(() => zipFile.getInputStream(entry))))
+      .getOrElse(Future.failed(new FileNotFoundException(WorkbookNotFoundExceptionMsg)))
   }
 
   def readWorkbook(source: Iterable[(ZipEntryData, ByteString)])(implicit materializer: Materializer): Future[Map[String, Int]] = {
-    read(Source.fromIterator(() => {
-      val filteredIterator = source.iterator.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes }
-      if (filteredIterator.isEmpty) throw new Exception(InvalidFileExceptionMsg)
-      filteredIterator
-    }))
+    Option(source.iterator.collect { case (zipEntry, bytes) if zipEntry.name == EntryName => bytes })
+      .filter(_.nonEmpty)
+      .map(entry => read(Source.fromIterator(() => entry)))
+      .getOrElse(Future.failed(new FileNotFoundException(WorkbookNotFoundExceptionMsg)))
   }
 
 

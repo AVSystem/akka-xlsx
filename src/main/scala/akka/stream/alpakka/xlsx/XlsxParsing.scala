@@ -116,15 +116,15 @@ object XlsxParsing {
   }
 
   private def sheetEntryName(sheetType: SheetType, workbook: Workbook) = {
+    def sheetEntryName(sheetId: Int) = s"xl/worksheets/sheet$sheetId.xml"
+
     sheetType match {
-      case SheetType.Name(sheetName) =>
-        workbook.sheets.get(sheetName).map(sheetId => s"xl/worksheets/sheet$sheetId.xml")
-      case SheetType.Id(sheetId) =>
-        Option(s"xl/worksheets/sheet$sheetId.xml")
+      case SheetType.Name(sheetName) => workbook.sheets.get(sheetName).map(sheetEntryName)
+      case SheetType.Id(sheetId) => Some(sheetEntryName(sheetId))
     }
   }
 
-  private def worksheetNotFoundExceptionMsg(sheetType: SheetType) = s"Workbook sheet $sheetType could not be found"
+  private def worksheetNotFoundExceptionMsg(sheetType: SheetType) = s"Workbook sheet $sheetType could not be found."
 
   private def readFromFile(
       file: ZipFile,
@@ -139,10 +139,10 @@ object XlsxParsing {
       }
     val sheetSourceCreator =
       (workbook: Workbook) => StreamConverters.fromInputStream(() =>
-        sheetEntryName(sheetType, workbook).flatMap(sheet => Option(file.getEntry(sheet))) match {
-          case Some(entry) => file.getInputStream(entry)
-          case None => throw new FileNotFoundException(worksheetNotFoundExceptionMsg(sheetType))
-        }
+        sheetEntryName(sheetType, workbook)
+          .flatMap(sheet => Option(file.getEntry(sheet)))
+          .map(file.getInputStream)
+          .getOrElse(throw new FileNotFoundException(worksheetNotFoundExceptionMsg(sheetType)))
       )
     read(workbookSource, sheetSourceCreator)
   }
@@ -164,9 +164,9 @@ object XlsxParsing {
         val optionalSheetName = sheetEntryName(sheetType, workbook)
         zipEntries.map { source =>
           Source.fromIterator(() => {
-            val filteredIterator = source.iterator.collect { case (zipEntry, bytes) if optionalSheetName.contains(zipEntry.name) => bytes }
-            if (filteredIterator.isEmpty) throw new FileNotFoundException(worksheetNotFoundExceptionMsg(sheetType))
-            filteredIterator
+            Option(source.iterator.collect { case (zipEntry, bytes) if optionalSheetName.contains(zipEntry.name) => bytes })
+              .filter(_.nonEmpty)
+              .getOrElse(throw new FileNotFoundException(worksheetNotFoundExceptionMsg(sheetType)))
           })
         }
       }
