@@ -55,30 +55,30 @@ object SstStreamer {
         var count                              = 0
         var si                                 = false
         var lastContent: Option[StringBuilder] = None
-        (data: ParseEvent) =>
-          data match {
-            case StartElement("si", _, _, _, _) =>
-              si = true
-              Nil
-            case EndElement("si") =>
-              si = false
-              lastContent match {
-                case Some(builder) =>
-                  val ret = (count, builder.toString())
-                  lastContent = None
-                  count += 1
-                  ret :: Nil
-                case None =>
-                  Nil
-              }
-            case Characters(text) if si =>
-              lastContent match {
-                case Some(t) => t.append(text)
-                case None    => lastContent = Some(new StringBuilder().append(text))
-              }
-              Nil
-            case _ => Nil
-          }
+
+        data: ParseEvent => data match {
+          case StartElement("si", _, _, _, _) =>
+            si = true
+            Nil
+          case EndElement("si") =>
+            val sst = lastContent match {
+              case Some(builder) =>
+                lastContent = None
+                (count, builder.toString()) :: Nil
+              case None =>
+                Nil
+            }
+            si = false
+            count += 1
+            sst
+          case Characters(text) if si =>
+            lastContent match {
+              case Some(builder) => builder.append(text)
+              case None => lastContent = Some(new StringBuilder().append(text))
+            }
+            Nil
+          case _ => Nil
+        }
       })
       .toMat(mapSink)(Keep.right)
       .run()
