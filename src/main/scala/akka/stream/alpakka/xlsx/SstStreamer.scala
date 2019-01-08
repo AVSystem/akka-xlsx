@@ -4,7 +4,7 @@ import java.util.zip.ZipFile
 
 import akka.stream.Materializer
 import akka.stream.alpakka.xml.scaladsl.XmlParsing
-import akka.stream.alpakka.xml.{Characters, EndElement, ParseEvent, StartElement}
+import akka.stream.alpakka.xml.{Characters, EndElement, StartElement}
 import akka.stream.contrib.ZipInputStreamSource.ZipEntryData
 import akka.stream.scaladsl.{Keep, Sink, Source, StreamConverters}
 import akka.util.ByteString
@@ -12,8 +12,9 @@ import akka.util.ByteString
 import scala.concurrent.{ExecutionContext, Future}
 
 object SstStreamer {
-
   private final val EntryName = "xl/sharedStrings.xml"
+  private final val StringItemTag = "si"
+
   private[xlsx] val defaultSink = Sink.seq[(Int, String)].mapMaterializedValue(_.map(_.toMap)(ExecutionContext.fromExecutor(_.run())))
 
 
@@ -52,36 +53,35 @@ object SstStreamer {
     inputSource
       .via(XmlParsing.parser)
       .statefulMapConcat[(Int, String)](() => {
-        var count                              = 0
-        var si                                 = false
-        var lastContent: Option[StringBuilder] = None
-        (data: ParseEvent) =>
-          data match {
-            case StartElement("si", _, _, _, _) =>
-              si = true
-              Nil
-            case EndElement("si") =>
-              si = false
-              lastContent match {
-                case Some(builder) =>
-                  val ret = (count, builder.toString())
-                  lastContent = None
-                  count += 1
-                  ret :: Nil
-                case None =>
-                  Nil
-              }
-            case Characters(text) if si =>
-              lastContent match {
-                case Some(t) => t.append(text)
-                case None    => lastContent = Some(new StringBuilder().append(text))
-              }
-              Nil
-            case _ => Nil
-          }
+        var sharedStringIndex                          = 0
+        var isInsideStringItemTag                      = false
+        var sharedStringBuilder: Option[StringBuilder] = None
+
+        {
+          case StartElement(StringItemTag, _, _, _, _) =>
+            isInsideStringItemTag = true
+            Nil
+          case EndElement(StringItemTag) =>
+            val sharedStringEntry = sharedStringBuilder match {
+              case Some(builder) =>
+                sharedStringBuilder = None
+                (sharedStringIndex, builder.toString()) :: Nil
+              case None =>
+                Nil
+            }
+            isInsideStringItemTag = false
+            sharedStringIndex += 1
+            sharedStringEntry
+          case Characters(text) if isInsideStringItemTag =>
+            sharedStringBuilder match {
+              case Some(builder) => builder.append(text)
+              case None          => sharedStringBuilder = Some(new StringBuilder(text))
+            }
+            Nil
+          case _ => Nil
+        }
       })
       .toMat(mapSink)(Keep.right)
       .run()
   }
-
 }
