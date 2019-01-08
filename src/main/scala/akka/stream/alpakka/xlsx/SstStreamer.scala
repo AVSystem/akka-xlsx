@@ -4,7 +4,7 @@ import java.util.zip.ZipFile
 
 import akka.stream.Materializer
 import akka.stream.alpakka.xml.scaladsl.XmlParsing
-import akka.stream.alpakka.xml.{Characters, EndElement, ParseEvent, StartElement}
+import akka.stream.alpakka.xml.{Characters, EndElement, StartElement}
 import akka.stream.contrib.ZipInputStreamSource.ZipEntryData
 import akka.stream.scaladsl.{Keep, Sink, Source, StreamConverters}
 import akka.util.ByteString
@@ -12,8 +12,9 @@ import akka.util.ByteString
 import scala.concurrent.{ExecutionContext, Future}
 
 object SstStreamer {
-
   private final val EntryName = "xl/sharedStrings.xml"
+  private final val StringItemTag = "si"
+
   private[xlsx] val defaultSink = Sink.seq[(Int, String)].mapMaterializedValue(_.map(_.toMap)(ExecutionContext.fromExecutor(_.run())))
 
 
@@ -52,29 +53,29 @@ object SstStreamer {
     inputSource
       .via(XmlParsing.parser)
       .statefulMapConcat[(Int, String)](() => {
-        var count                              = 0
-        var si                                 = false
-        var lastContent: Option[StringBuilder] = None
+        var sharedStringIndex                          = 0
+        var isInsideStringItemTag                      = false
+        var sharedStringBuilder: Option[StringBuilder] = None
 
-        data: ParseEvent => data match {
-          case StartElement("si", _, _, _, _) =>
-            si = true
+        {
+          case StartElement(StringItemTag, _, _, _, _) =>
+            isInsideStringItemTag = true
             Nil
-          case EndElement("si") =>
-            val sst = lastContent match {
+          case EndElement(StringItemTag) =>
+            val sharedStringEntry = sharedStringBuilder match {
               case Some(builder) =>
-                lastContent = None
-                (count, builder.toString()) :: Nil
+                sharedStringBuilder = None
+                (sharedStringIndex, builder.toString()) :: Nil
               case None =>
                 Nil
             }
-            si = false
-            count += 1
-            sst
-          case Characters(text) if si =>
-            lastContent match {
+            isInsideStringItemTag = false
+            sharedStringIndex += 1
+            sharedStringEntry
+          case Characters(text) if isInsideStringItemTag =>
+            sharedStringBuilder match {
               case Some(builder) => builder.append(text)
-              case None => lastContent = Some(new StringBuilder().append(text))
+              case None          => sharedStringBuilder = Some(new StringBuilder(text))
             }
             Nil
           case _ => Nil
@@ -83,5 +84,4 @@ object SstStreamer {
       .toMat(mapSink)(Keep.right)
       .run()
   }
-
 }
