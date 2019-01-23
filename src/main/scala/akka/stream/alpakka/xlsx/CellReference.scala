@@ -28,14 +28,12 @@ object CellReference {
   }
 
   private def splitCellRef(ref: String) = {
-    val len  = ref.length
-    val s1   = ref.filterNot(c => c >= '0' && c <= '9')
-    val sLen = s1.length
-    if (len == 0 || sLen == len) {
-      None
-    } else {
-      Some((ref, s1, ref.substring(len - sLen)))
-    }
+    val refLength = ref.length
+    val refColumnPart       = ref.filterNot(c => c >= '0' && c <= '9')
+    val refColumnPartLength = refColumnPart.length
+
+    if (refLength == 0 || refColumnPartLength == refLength) None
+    else Some((ref, refColumnPart, ref.substring(refColumnPartLength)))
   }
 
   private[xlsx] def parseRef(attrs: List[Attribute]): Option[CellReference] = {
