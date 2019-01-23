@@ -11,20 +11,23 @@ case class CellReference(name: String, colNum: Int, rowNum: Int)
 
 object CellReference {
 
+  private final val BaseLettersNum = 26
+  private final val AsciiCodeA = 65
+
   private val CELL_REF = """(\s+"""
 
   private def convertColStringToIndex(ref: String): Int = {
     @tailrec
-    def solver(refArray: List[Char], index: Int, retval: Int): Int = {
-      refArray.headOption match {
-        case Some(c) =>
-          if (index != 0) throw new IllegalArgumentException("Bad col ref format '" + ref + "'")
-          else solver(refArray.tail, index + 1, retval * 26 + c - 65 + 1)
+    def convert(refChars: List[Char], retval: Int): Int = {
+      refChars.headOption match {
+        case Some(char) =>
+          // `c - AsciiCodeA` converts base capital letters to consecutive numbers (starting from 0), ie. 'A' -> 0, 'B' -> 1, ...
+          convert(refChars.tail, retval * BaseLettersNum + (char - AsciiCodeA) + 1)
         case None => retval
       }
     }
 
-    solver(ref.toUpperCase(Locale.ROOT).toCharArray.toList, 0, 0)
+    convert(ref.toUpperCase(Locale.ROOT).toCharArray.toList, 0)
   }
 
   private def splitCellRef(ref: String) = {
