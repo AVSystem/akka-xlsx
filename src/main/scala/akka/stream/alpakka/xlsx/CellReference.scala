@@ -7,69 +7,68 @@ import akka.stream.alpakka.xml.Attribute
 import scala.annotation.tailrec
 import scala.util.Try
 
-case class CellReference(name: String, colNum: Int, rowNum: Int)
+final case class CellReference(fullName: String, columnIndex: Int, rowIndex: Int)
 
 object CellReference {
+  private final val BaseLettersNum = ('A' to 'Z').size
+  private final val AsciiCodeA     = 'A'
+  private final val AsciiCodeZ     = 'Z'
 
-  private final val BaseLettersNum = 26
-  private final val AsciiCodeA = 65
 
-  private val CELL_REF = """(\s+"""
+  private[xlsx] def parseReference(attributes: List[Attribute]): Option[CellReference] = {
+    def splitCellReference(reference: String) = {
+      val referenceLength       = reference.length
+      val referenceColumn       = reference.filterNot(c => c >= '0' && c <= '9')
+      val referenceColumnLength = referenceColumn.length
 
-  private def convertColStringToIndex(ref: String): Int = {
-    @tailrec
-    def convert(refChars: List[Char], retval: Int): Int = {
-      refChars.headOption match {
-        case Some(char) =>
-          // `c - AsciiCodeA` converts base capital letters to consecutive numbers (starting from 0), ie. 'A' -> 0, 'B' -> 1, ...
-          convert(refChars.tail, retval * BaseLettersNum + (char - AsciiCodeA) + 1)
-        case None => retval
-      }
+      if (referenceLength == 0 || referenceColumnLength == 0 || referenceColumnLength == referenceLength) None
+      else Some((reference, referenceColumn, reference.substring(referenceColumnLength)))
     }
 
-    convert(ref.toUpperCase(Locale.ROOT).toCharArray.toList, 0)
-  }
-
-  private def splitCellRef(ref: String) = {
-    val refLength = ref.length
-    val refColumnPart       = ref.filterNot(c => c >= '0' && c <= '9')
-    val refColumnPartLength = refColumnPart.length
-
-    if (refLength == 0 || refColumnPartLength == refLength) None
-    else Some((ref, refColumnPart, ref.substring(refColumnPartLength)))
-  }
-
-  private[xlsx] def parseRef(attrs: List[Attribute]): Option[CellReference] = {
-    attrs
-      .find(_.name == "r")
-      .flatMap { attr =>
-        splitCellRef(attr.value)
-      }
-      .flatMap {
-        case (ref, s1, s2) =>
-          Try(CellReference(ref, convertColStringToIndex(s1), Integer.parseInt(s2))).toOption
-      }
-  }
-
-  private def convertIndexToColString(num: Int): String = {
-    def solver(rest: Int, s: String): String = {
-      if (rest == 0) {
-        s
-      } else {
-        val (f, r) = {
-          if (rest > 26) (rest / 26, rest % 26)
-          else (rest, 0)
+    def convertColumnStringToIndex(column: String) = {
+      @tailrec
+      def convert(referencePart: String, currentIndex: Int): Int = {
+        referencePart.headOption match {
+          case Some(char) if AsciiCodeA <= char && char <= AsciiCodeZ =>
+            // `char - AsciiCodeA` converts base capital letters to consecutive numbers (starting from 0), ie. 'A' -> 0, 'B' -> 1, ...
+            convert(referencePart.tail, currentIndex * BaseLettersNum + (char - AsciiCodeA) + 1)
+          case Some(invalidLetterNum) =>
+            throw new IllegalArgumentException(s"Unexpected letter of code $invalidLetterNum found.")
+          case None => currentIndex
         }
-
-        solver(r, s + (f + 65 - 1).toChar)
       }
+
+      convert(column.toUpperCase(Locale.ROOT), 0)
     }
-    solver(num, "")
+
+    def convertRowStringToIndex(row: String) = Try(row.toInt).filter(_ > 0).get
+
+    attributes.find(_.name == "r")
+      .flatMap(referenceAttribute => splitCellReference(referenceAttribute.value))
+      .flatMap { case (reference, referenceColumn, referenceRow) =>
+        Try(CellReference(reference, convertColumnStringToIndex(referenceColumn), convertRowStringToIndex(referenceRow))).toOption
+      }
   }
 
-  private[xlsx] def generateRef(rowNum: Int, cellNum: Int): CellReference = {
-    val first = convertIndexToColString(cellNum)
-    CellReference(first + rowNum, cellNum, rowNum)
-  }
+  @throws[IllegalArgumentException]("if either columnIndex or rowIndex is not positive")
+  private[xlsx] def generateReference(columnIndex: Int, rowIndex: Int): CellReference = {
+    require(columnIndex > 0 && rowIndex > 0)
 
+    val columnString = {
+      def extractLetterNum(number: Int): (Int, Int) = (number % BaseLettersNum, number / BaseLettersNum)
+
+      @tailrec
+      def convert(indexRest: Int, currentString: String): String = {
+        if (indexRest == 0) currentString
+        else {
+          val (lastLetterNum, remainder) = extractLetterNum(indexRest - 1)
+          convert(remainder, (lastLetterNum + AsciiCodeA).toChar + currentString)
+        }
+      }
+
+      convert(columnIndex, "")
+    }
+
+    CellReference(columnString + rowIndex.toString, columnIndex, rowIndex)
+  }
 }
