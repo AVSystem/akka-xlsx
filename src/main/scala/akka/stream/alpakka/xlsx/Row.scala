@@ -6,11 +6,11 @@ final class Row(val rowIndex: Int, columnIndexToCell: mutable.TreeMap[Int, Cell]
   require(columnIndexToCell.nonEmpty)
 
   /**
-    * @return An `Iterable` of all non-`Blank` cells. Please note that values contained by this `Iterable` are
-    *         guaranteed to be returned according to ascending order of column numbers, however two consecutive items do
-    *         not necessarily represent cells of adjacent columns.
+    * An `Iterable` of all non-`Blank` cells. Please note that values contained by this `Iterable` are guaranteed to be
+    * returned according to ascending order of column numbers, however two consecutive items do not necessarily
+    * represent cells of adjacent columns.
     */
-  def simpleCells: Iterable[Cell] = columnIndexToCell.values
+  lazy val simpleCells: Iterable[Cell] = columnIndexToCell.values
 
   /**
     * A `Sequence` of all cells ordered by ascending column numbers. Two consecutive items of this `Seq` correspond to
@@ -20,6 +20,13 @@ final class Row(val rowIndex: Int, columnIndexToCell: mutable.TreeMap[Int, Cell]
   lazy val cells: Seq[Cell] = (1 to columnIndexToCell.keys.max).iterator
     .map(columnIndex => columnIndexToCell.getOrElse(columnIndex, Cell.Blank(CellReference.generateReference(columnIndex, rowIndex))))
     .toSeq
+
+  /**
+    * @param columnIndex cell number to be returned, should not be less than 1
+    * @return            `Some(cell)` corresponding to an XLSX cell located in `rowIndex`-th row and `columnIndex`-th
+    *                    column if it's non-empty; `None` otherwise
+    */
+  def getCell(columnIndex: Int): Option[Cell] = columnIndexToCell.get(columnIndex)
 
   override def toString: String = s"Row($rowIndex, $cells)"
 }
