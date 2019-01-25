@@ -194,7 +194,7 @@ object XlsxParsing {
               case StartElement("row", _, _, _, _) => nillable(insideRow = true)
               case StartElement("c", attrs, _, _, _) if insideRow =>
                 nillable({
-                  ref = CellReference.parseRef(attrs)
+                  ref = CellReference.parseReference(attrs)
                   numFmtId = attrs.find(_.name == "s").flatMap(a => Try(Integer.parseInt(a.value)).toOption)
                   cellType = attrs.find(_.name == "t").map(a => CellType.parse(a.value))
                   insideCol = true
@@ -215,7 +215,7 @@ object XlsxParsing {
                 nillable({
                   val simpleRef = ref.getOrElse(CellReference("", cellNum, rowNum))
                   val cell = buildCell(cellType, lastContent, lastFormula, numFmtId, workbook, simpleRef)
-                  cellList += (simpleRef.colNum -> cell)
+                  cellList += (simpleRef.columnIndex -> cell)
                   numFmtId = None
                   ref = None
                   cellNum += 1
