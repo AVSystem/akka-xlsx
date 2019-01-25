@@ -6,6 +6,9 @@ lazy val AkkaVersion        = "2.5.12"
 lazy val AkkaContribVersion = "0.9"
 lazy val AlpakkaXmlVersion  = "0.19"
 
+lazy val ScalatestVersion  = "3.0.5"
+lazy val ScalacheckVersion = "1.14.0"
+
 lazy val commonSettings = Seq(
   updateOptions := updateOptions.value.withGigahorse(false),
   scalaVersion := "2.12.6",
@@ -31,11 +34,13 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       "com.typesafe.akka"  %% "akka-stream"             % AkkaVersion,
       "com.lightbend.akka" %% "akka-stream-alpakka-xml" % AlpakkaXmlVersion,
-      "com.typesafe.akka" %% "akka-stream-contrib"      % AkkaContribVersion,
-      "com.typesafe.akka"  %% "akka-stream-testkit"     % AkkaVersion % Test
-    )
+      "com.typesafe.akka"  %% "akka-stream-contrib"     % AkkaContribVersion,
+    ) ++ Seq(
+      "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion,
+      "org.scalatest"     %% "scalatest"           % ScalatestVersion,
+      "org.scalacheck"    %% "scalacheck"          % ScalacheckVersion,
+    ).map(_ % Test)
   )
-
 
 licenses += ("Apache License 2", new URL("http://www.apache.org/licenses/LICENSE-2.0.html"))
 developers += Developer(
