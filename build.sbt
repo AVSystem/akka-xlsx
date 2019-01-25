@@ -2,16 +2,16 @@ import ReleaseTransformations._
 
 name := "akka-xlsx"
 
-lazy val AkkaVersion        = "2.5.12"
+lazy val AkkaVersion        = "2.5.19"
 lazy val AkkaContribVersion = "0.9"
-lazy val AlpakkaXmlVersion  = "0.19"
+lazy val AlpakkaXmlVersion  = "0.20"
 
 lazy val ScalatestVersion  = "3.0.5"
 lazy val ScalacheckVersion = "1.14.0"
 
 lazy val commonSettings = Seq(
   updateOptions := updateOptions.value.withGigahorse(false),
-  scalaVersion := "2.12.6",
+  scalaVersion := "2.12.8",
   organization := "de.envisia.akka",
   scalacOptions in (Compile, doc) ++= Seq(
     "-target:jvm-1.8",
