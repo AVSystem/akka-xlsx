@@ -6,12 +6,13 @@ import java.util.zip.{ZipFile, ZipInputStream}
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.alpakka.xml.scaladsl.XmlParsing
-import akka.stream.alpakka.xml.{Characters, EndElement, ParseEvent, StartElement}
+import akka.stream.alpakka.xml.{ Characters, EndElement, StartElement }
 import akka.stream.contrib.ZipInputStreamSource
 import akka.stream.contrib.ZipInputStreamSource.ZipEntryData
 import akka.stream.scaladsl.{Sink, Source, StreamConverters}
 import akka.util.ByteString
 
+import scala.collection.immutable.TreeMap
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -183,56 +184,56 @@ object XlsxParsing {
           var cellType: Option[CellType] = None
           var lastContent: Option[String] = None
           var lastFormula: Option[String] = None
-          var cellList: mutable.TreeMap[Int, Cell] = mutable.TreeMap.empty
+          var cellList: mutable.Builder[(Int, Cell), TreeMap[Int, Cell]] = TreeMap.newBuilder
           var rowNum = 1
           var cellNum = 1
           var ref: Option[CellReference] = None
           var numFmtId: Option[Int] = None
 
-          (data: ParseEvent) =>
-            data match {
-              case StartElement("row", _, _, _, _) => nillable(insideRow = true)
-              case StartElement("c", attrs, _, _, _) if insideRow =>
-                nillable({
-                  ref = CellReference.parseRef(attrs)
-                  numFmtId = attrs.find(_.name == "s").flatMap(a => Try(Integer.parseInt(a.value)).toOption)
-                  cellType = attrs.find(_.name == "t").map(a => CellType.parse(a.value))
-                  insideCol = true
-                })
-              case StartElement("v", _, _, _, _) if insideCol =>
-                nillable({ insideValue = true })
-              case StartElement("f", _, _, _, _) if insideCol =>
-                nillable(insideFormula = true)
-              case Characters(text) if insideValue =>
-                nillable(lastContent = Some(lastContent.map(_ + text).getOrElse(text)))
-              case Characters(text) if insideFormula =>
-                nillable({ lastFormula = Some(lastFormula.map(_ + text).getOrElse(text)) })
-              case EndElement("v") if insideValue =>
-                nillable({ insideValue = false })
-              case EndElement("f") if insideFormula =>
-                nillable(insideFormula = false)
-              case EndElement("c") if insideCol =>
-                nillable({
-                  val simpleRef = ref.getOrElse(CellReference("", cellNum, rowNum))
-                  val cell = buildCell(cellType, lastContent, lastFormula, numFmtId, workbook, simpleRef)
-                  cellList += (simpleRef.colNum -> cell)
-                  numFmtId = None
-                  ref = None
-                  cellNum += 1
-                  insideCol = false
-                  cellType = None
-                  lastContent = None
-                  lastFormula = None
-                })
-              case EndElement("row") if insideRow =>
-                val ret = new Row(rowNum, cellList)
-                rowNum += 1
-                cellNum = 1
-                cellList = mutable.TreeMap.empty
-                insideRow = false
-                ret :: Nil
-              case _ => Nil // ignore unused stuff
-            }
+          {
+            case StartElement("row", _, _, _, _) =>
+              nillable { insideRow = true }
+            case StartElement("c", attrs, _, _, _) if insideRow =>
+              nillable {
+                ref = CellReference.parseReference(attrs)
+                numFmtId = attrs.find(_.name == "s").flatMap(a => Try(Integer.parseInt(a.value)).toOption)
+                cellType = attrs.find(_.name == "t").map(a => CellType.parse(a.value))
+                insideCol = true
+              }
+            case StartElement("v", _, _, _, _) if insideCol =>
+              nillable { insideValue = true }
+            case StartElement("f", _, _, _, _) if insideCol =>
+              nillable { insideFormula = true }
+            case Characters(text) if insideValue =>
+              nillable { lastContent = Some(lastContent.map(_ + text).getOrElse(text)) }
+            case Characters(text) if insideFormula =>
+              nillable { lastFormula = Some(lastFormula.map(_ + text).getOrElse(text)) }
+            case EndElement("v") if insideValue =>
+              nillable { insideValue = false }
+            case EndElement("f") if insideFormula =>
+              nillable { insideFormula = false }
+            case EndElement("c") if insideCol =>
+              nillable {
+                val simpleRef = ref.getOrElse(CellReference("", cellNum, rowNum))
+                val cell = buildCell(cellType, lastContent, lastFormula, numFmtId, workbook, simpleRef)
+                cellList += (simpleRef.columnIndex -> cell)
+                numFmtId = None
+                ref = None
+                cellNum += 1
+                insideCol = false
+                cellType = None
+                lastContent = None
+                lastFormula = None
+              }
+            case EndElement("row") if insideRow =>
+              val ret = new Row(rowNum, cellList.result)
+              rowNum += 1
+              cellNum = 1
+              cellList = TreeMap.newBuilder
+              insideRow = false
+              ret :: Nil
+            case _ => Nil // ignore unused stuff
+          }
         })
     }
   }

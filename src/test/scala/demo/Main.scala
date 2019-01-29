@@ -38,7 +38,7 @@ object Main {
     val zipFile = new ZipFile(path.toFile)
 
     val done = XlsxParsing.fromZipFile(zipFile, sheetId).runForeach { row =>
-      if (row.rowNum == 2) {
+      if (row.rowIndex == 2) {
         row.cells.foreach {
           case Cell.Date(value, _)               => println(s"Date Cell: $value")
           case Cell.Numeric(value, ref)          => println(s"Numeric Cell: $value - $ref")
