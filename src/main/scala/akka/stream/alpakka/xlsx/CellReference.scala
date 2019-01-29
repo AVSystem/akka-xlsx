@@ -14,15 +14,12 @@ object CellReference {
   private final val AsciiCodeA     = 'A'
   private final val AsciiCodeZ     = 'Z'
 
-
   private[xlsx] def parseReference(attributes: List[Attribute]): Option[CellReference] = {
     def splitCellReference(reference: String) = {
-      val referenceLength       = reference.length
-      val referenceColumn       = reference.filterNot(c => c >= '0' && c <= '9')
-      val referenceColumnLength = referenceColumn.length
+      val referenceColumn = reference.filterNot(c => c >= '0' && c <= '9')
 
-      if (referenceLength == 0 || referenceColumnLength == 0 || referenceColumnLength == referenceLength) None
-      else Some((reference, referenceColumn, reference.substring(referenceColumnLength)))
+      if (reference.length == 0 || referenceColumn.length == 0 || referenceColumn.length == reference.length) None
+      else Some((reference, referenceColumn, reference.substring(referenceColumn.length)))
     }
 
     def convertColumnStringToIndex(column: String) = {
@@ -38,15 +35,18 @@ object CellReference {
         }
       }
 
-      convert(column.toUpperCase(Locale.ROOT), 0)
+      Try(convert(column.toUpperCase(Locale.ROOT), 0))
     }
 
-    def convertRowStringToIndex(row: String) = Try(row.toInt).filter(_ > 0).get
+    def convertRowStringToIndex(row: String) = Try(row.toInt).filter(_ > 0)
 
     attributes.find(_.name == "r")
       .flatMap(referenceAttribute => splitCellReference(referenceAttribute.value))
       .flatMap { case (reference, referenceColumn, referenceRow) =>
-        Try(CellReference(reference, convertColumnStringToIndex(referenceColumn), convertRowStringToIndex(referenceRow))).toOption
+        (for {
+          columnIndex <- convertColumnStringToIndex(referenceColumn)
+          rowIndex    <- convertRowStringToIndex(referenceRow)
+        } yield CellReference(reference, columnIndex, rowIndex)).toOption
       }
   }
 
@@ -55,13 +55,11 @@ object CellReference {
     require(columnIndex > 0 && rowIndex > 0)
 
     val columnString = {
-      def extractLetterNum(number: Int): (Int, Int) = (number % BaseLettersNum, number / BaseLettersNum)
-
       @tailrec
       def convert(indexRest: Int, currentString: String): String = {
         if (indexRest == 0) currentString
         else {
-          val (lastLetterNum, remainder) = extractLetterNum(indexRest - 1)
+          val (lastLetterNum, remainder) = ((indexRest - 1) % BaseLettersNum, (indexRest - 1) / BaseLettersNum)
           convert(remainder, (lastLetterNum + AsciiCodeA).toChar + currentString)
         }
       }
