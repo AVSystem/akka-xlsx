@@ -3,8 +3,6 @@ package akka.stream.alpakka.xlsx
 import scala.collection.immutable.TreeMap
 
 final class Row(val rowIndex: Int, columnIndexToCell: TreeMap[Int, Cell]) {
-  require(columnIndexToCell.nonEmpty)
-
   /**
     * @return An `Iterable` of all non-`Blank` cells. Please note that values contained by this `Iterable` are
     *         guaranteed to be returned according to ascending order of column numbers, however two consecutive items do
