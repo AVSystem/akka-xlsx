@@ -2,13 +2,14 @@ package akka.stream.alpakka.xlsx
 
 import org.scalacheck.{Gen, Shrink}
 import org.scalatest.enablers.Sequencing._
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, WordSpec}
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
+import scala.annotation.nowarn
 import scala.collection.immutable.TreeMap
 import scala.util.Try
 
-final class RowTest extends WordSpec with Matchers with GeneratorDrivenPropertyChecks {
+final class RowTest extends WordSpec with Matchers with ScalaCheckDrivenPropertyChecks {
   val column1 = Cell.Text("column1", CellReference("A2", 1, 2))
   val column2 = Cell.Text("column2", CellReference("B2", 2, 2))
   val column4 = Cell.Numeric(BigDecimal(2137), CellReference("D2", 4, 2))
@@ -49,6 +50,7 @@ final class RowTest extends WordSpec with Matchers with GeneratorDrivenPropertyC
         }
       }
 
+      @nowarn //up-to-date scalacheck uses deprecated Stream instead of LazyList for now
       implicit def shrink[A] = Shrink[A](_ => Stream.empty) //scalacheck's shrink is useless for custom gens
 
       forAll(cellMapGen) { cellMap =>

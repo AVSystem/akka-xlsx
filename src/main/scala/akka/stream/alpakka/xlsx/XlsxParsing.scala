@@ -226,7 +226,7 @@ object XlsxParsing {
                 lastFormula = None
               }
             case EndElement("row") if insideRow =>
-              val ret = new Row(rowNum, cellList.result)
+              val ret = new Row(rowNum, cellList.result())
               rowNum += 1
               cellNum = 1
               cellList = TreeMap.newBuilder

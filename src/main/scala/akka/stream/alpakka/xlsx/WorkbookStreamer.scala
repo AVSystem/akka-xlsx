@@ -33,7 +33,7 @@ object WorkbookStreamer {
 
   private def read(inputSource: Source[ByteString, _])(implicit materializer: Materializer): Future[Map[String, Int]] = {
     inputSource
-      .via(XmlParsing.parser)
+      .via(XmlParsing.parser())
       .statefulMapConcat[(String, Int)](() => {
         var insideSheets: Boolean = false
         (data: ParseEvent) =>

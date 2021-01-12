@@ -2,35 +2,33 @@ import ReleaseTransformations._
 
 name := "akka-xlsx"
 
-lazy val AkkaVersion        = "2.5.19"
-lazy val AkkaContribVersion = "0.9"
-lazy val AlpakkaXmlVersion  = "0.20"
+lazy val AkkaVersion        = "2.5.31"
+lazy val AkkaContribVersion = "0.10"
+lazy val AlpakkaXmlVersion  = "2.0.2"
 
-lazy val ScalatestVersion  = "3.0.5"
-lazy val ScalacheckVersion = "1.14.0"
+lazy val ScalatestVersion  = "3.0.9"
+lazy val ScalacheckVersion = "1.15.2"
 
 lazy val commonSettings = Seq(
   updateOptions := updateOptions.value.withGigahorse(false),
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.13.4",
   organization := "de.envisia.akka",
-  scalacOptions in (Compile, doc) ++= Seq(
-    "-target:jvm-1.8",
-    "-deprecation",
+  scalacOptions ++= Seq(
+    "-target:jvm-1.11",
     "-encoding",
     "UTF-8",
     "-feature",
     "-unchecked",
-    "-deprecation"
+    "-deprecation",
+    "-Xfatal-warnings",
   ),
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-o"),
   publishMavenStyle := true,
   pomIncludeRepository := (_ => false),
-  publishTo := Some("envisia" at "https://nexus.envisia.io/repository/public/")
 )
 
 lazy val root = (project in file("."))
-  .settings(commonSettings)
-  .settings(
+  .settings(commonSettings ++ Seq(
     libraryDependencies ++= Seq(
       "com.typesafe.akka"  %% "akka-stream"             % AkkaVersion,
       "com.lightbend.akka" %% "akka-stream-alpakka-xml" % AlpakkaXmlVersion,
@@ -40,7 +38,7 @@ lazy val root = (project in file("."))
       "org.scalatest"     %% "scalatest"           % ScalatestVersion,
       "org.scalacheck"    %% "scalacheck"          % ScalacheckVersion,
     ).map(_ % Test)
-  )
+  ))
 
 licenses += ("Apache License 2", new URL("http://www.apache.org/licenses/LICENSE-2.0.html"))
 developers += Developer(
