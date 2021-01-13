@@ -1,10 +1,11 @@
 name := "akka-xlsx"
 
-lazy val AkkaVersion        = "2.5.32"
+lazy val AkkaVersion = "2.5.32"
 lazy val AkkaContribVersion = "0.10"
-lazy val AlpakkaXmlVersion  = "2.0.2"
+lazy val AlpakkaXmlVersion = "2.0.2"
 
-lazy val ScalatestVersion  = "3.0.9"
+lazy val ScalatestVersion = "3.2.3"
+lazy val ScalatestPlusVersion = "3.2.3.0"
 lazy val ScalacheckVersion = "1.15.2"
 
 lazy val commonSettings = Seq(
@@ -27,13 +28,14 @@ lazy val commonSettings = Seq(
 lazy val root = (project in file("."))
   .settings(commonSettings ++ Seq(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"  %% "akka-stream"             % AkkaVersion,
+      "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
       "com.lightbend.akka" %% "akka-stream-alpakka-xml" % AlpakkaXmlVersion,
-      "com.typesafe.akka"  %% "akka-stream-contrib"     % AkkaContribVersion,
+      "com.typesafe.akka" %% "akka-stream-contrib" % AkkaContribVersion,
     ) ++ Seq(
       "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion,
-      "org.scalatest"     %% "scalatest"           % ScalatestVersion,
-      "org.scalacheck"    %% "scalacheck"          % ScalacheckVersion,
+      "org.scalatest" %% "scalatest" % ScalatestVersion,
+      "org.scalatestplus" %% "scalacheck-1-15" % ScalatestPlusVersion,
+      "org.scalacheck" %% "scalacheck" % ScalacheckVersion,
     ).map(_ % Test)
   ))
 

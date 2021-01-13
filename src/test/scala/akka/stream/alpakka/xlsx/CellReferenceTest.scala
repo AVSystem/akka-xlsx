@@ -2,10 +2,11 @@ package akka.stream.alpakka.xlsx
 
 import akka.stream.alpakka.xml.Attribute
 import org.scalacheck.Gen
-import org.scalatest.{Matchers, WordSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-final class CellReferenceTest extends WordSpec with Matchers with ScalaCheckDrivenPropertyChecks {
+final class CellReferenceTest extends AnyWordSpec with Matchers with ScalaCheckDrivenPropertyChecks {
   "CellReference" should {
     "return None if a cell reference attribute is missing" in {
       // case: no reference attribute
