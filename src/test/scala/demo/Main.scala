@@ -29,7 +29,6 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     implicit val actorSystem: ActorSystem   = ActorSystem()
-    implicit val materializer: Materializer = ActorMaterializer()
     implicit val ec: ExecutionContext       = actorSystem.dispatcher
 
     val sheetId = 1

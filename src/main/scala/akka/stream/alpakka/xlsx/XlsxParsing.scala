@@ -131,10 +131,10 @@ object XlsxParsing {
       sstSink: Sink[(Int, String), Future[Map[Int, String]]]
   )(implicit materializer: Materializer) = {
     val workbookSource = Source
-      .fromFuture(SstStreamer.readSst(file, sstSink))
-      .flatMapConcat(sst => Source.fromFuture(StyleStreamer.readStyles(file)).map((sst, _)))
+      .future(SstStreamer.readSst(file, sstSink))
+      .flatMapConcat(sst => Source.future(StyleStreamer.readStyles(file)).map((sst, _)))
       .flatMapConcat { case (sst, styles) =>
-        Source.fromFuture(WorkbookStreamer.readWorkbook(file)).map(sheets => Workbook(sst, sheets, styles))
+        Source.future(WorkbookStreamer.readWorkbook(file)).map(sheets => Workbook(sst, sheets, styles))
       }
     val sheetSourceCreator =
       (workbook: Workbook) => StreamConverters.fromInputStream(() =>
@@ -153,13 +153,13 @@ object XlsxParsing {
   )(implicit materializer: Materializer, executionContext: ExecutionContext) = {
     val zipEntries = source.runWith(Sink.seq)
     val workbookSource = Source
-      .fromFuture(zipEntries.flatMap(SstStreamer.readSst(_, sstSink)))
-      .flatMapConcat(sst => Source.fromFuture(zipEntries.flatMap(StyleStreamer.readStyles)).map((sst, _)))
+      .future(zipEntries.flatMap(SstStreamer.readSst(_, sstSink)))
+      .flatMapConcat(sst => Source.future(zipEntries.flatMap(StyleStreamer.readStyles)).map((sst, _)))
       .flatMapConcat { case (sst, styles) =>
-        Source.fromFuture(zipEntries.flatMap(WorkbookStreamer.readWorkbook)).map(sheets => Workbook(sst, sheets, styles))
+        Source.future(zipEntries.flatMap(WorkbookStreamer.readWorkbook)).map(sheets => Workbook(sst, sheets, styles))
       }
     val sheetSourceCreator =
-      (workbook: Workbook) => Source.fromFutureSource {
+      (workbook: Workbook) => Source.futureSource {
         val optionalSheetName = sheetEntryName(sheetType, workbook)
         zipEntries.map { source =>
           Source.fromIterator(() => {
