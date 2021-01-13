@@ -50,8 +50,9 @@ final class RowTest extends WordSpec with Matchers with ScalaCheckDrivenProperty
         }
       }
 
-      @nowarn //up-to-date scalacheck uses deprecated Stream instead of LazyList for now
-      implicit def shrink[A] = Shrink[A](_ => Stream.empty) //scalacheck's shrink is useless for custom gens
+      //scalacheck's shrink is useless for custom gens
+      //up-to-date scalacheck uses deprecated Stream instead of LazyList for now
+      implicit def shrink[A] = Shrink[A](_ => Stream.empty: @nowarn)
 
       forAll(cellMapGen) { cellMap =>
         val row = new Row(rowIndex, cellMap)
