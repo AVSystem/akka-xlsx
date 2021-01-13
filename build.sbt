@@ -1,5 +1,3 @@
-import ReleaseTransformations._
-
 name := "akka-xlsx"
 
 lazy val AkkaVersion        = "2.5.31"
@@ -14,7 +12,6 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.13.4",
   organization := "de.envisia.akka",
   scalacOptions ++= Seq(
-    "-target:jvm-1.11",
     "-encoding",
     "UTF-8",
     "-feature",
@@ -46,19 +43,4 @@ developers += Developer(
   "Christian Schmitt",
   "c.schmitt@briefdomain.de",
   new URL("https://github.com/schmitch/")
-)
-
-releasePublishArtifactsAction := PgpKeys.publishSigned.value
-releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,
-  inquireVersions,
-  runClean,
-  runTest,
-  setReleaseVersion,
-  commitReleaseVersion,
-  tagRelease,
-  publishArtifacts,
-  setNextVersion,
-  commitNextVersion,
-  pushChanges
 )
