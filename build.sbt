@@ -1,6 +1,6 @@
 name := "akka-xlsx"
 
-lazy val AkkaVersion        = "2.5.31"
+lazy val AkkaVersion        = "2.5.32"
 lazy val AkkaContribVersion = "0.10"
 lazy val AlpakkaXmlVersion  = "2.0.2"
 
