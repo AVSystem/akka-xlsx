@@ -2,10 +2,11 @@ package akka.stream.alpakka.xlsx
 
 import akka.stream.alpakka.xml.Attribute
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{ Matchers, WordSpec }
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-final class CellReferenceTest extends WordSpec with Matchers with GeneratorDrivenPropertyChecks {
+final class CellReferenceTest extends AnyWordSpec with Matchers with ScalaCheckDrivenPropertyChecks {
   "CellReference" should {
     "return None if a cell reference attribute is missing" in {
       // case: no reference attribute
@@ -83,7 +84,7 @@ final class CellReferenceTest extends WordSpec with Matchers with GeneratorDrive
         whenever(columnIndex > 0 && rowIndex > 0) {
           val columnString = {
             var currentIndex  = columnIndex
-            val resultBuilder = StringBuilder.newBuilder
+            val resultBuilder = new StringBuilder()
 
             while (currentIndex > 0) {
               currentIndex -= 1

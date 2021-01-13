@@ -20,7 +20,7 @@ private[xlsx] object DateCell {
       locale: Locale = Locale.getDefault,
       zoneId: ZoneId = ZoneId.systemDefault()
   ): LocalDateTime = {
-    val doubleDate        = date.doubleValue()
+    val doubleDate        = date.doubleValue
     val wholeDays         = Math.floor(doubleDate).toInt
     val millisecondsInDay = ((doubleDate - wholeDays) * DAY_MILLISECONDS + 0.5).toInt
     val calendar          = Calendar.getInstance(TimeZone.getDefault, Locale.getDefault)

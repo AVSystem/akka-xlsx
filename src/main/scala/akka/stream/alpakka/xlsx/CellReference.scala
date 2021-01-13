@@ -60,7 +60,7 @@ object CellReference {
         if (indexRest == 0) currentString
         else {
           val (lastLetterNum, remainder) = ((indexRest - 1) % BaseLettersNum, (indexRest - 1) / BaseLettersNum)
-          convert(remainder, (lastLetterNum + AsciiCodeA).toChar + currentString)
+          convert(remainder, s"${(lastLetterNum + AsciiCodeA).toChar}$currentString")
         }
       }
 
