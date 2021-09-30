@@ -1,8 +1,8 @@
 name := "akka-xlsx"
 
-lazy val AkkaVersion = "2.6.10"
+lazy val AkkaVersion = "2.6.16"
 lazy val AkkaContribVersion = "0.11"
-lazy val AlpakkaXmlVersion = "2.0.2"
+lazy val AlpakkaXmlVersion = "3.0.3"
 
 lazy val ScalatestVersion = "3.2.3"
 lazy val ScalatestPlusVersion = "3.2.3.0"
@@ -10,7 +10,7 @@ lazy val ScalacheckVersion = "1.15.2"
 
 lazy val commonSettings = Seq(
   updateOptions := updateOptions.value.withGigahorse(false),
-  scalaVersion := "2.13.4",
+  scalaVersion := "2.13.6",
   organization := "de.envisia.akka",
   scalacOptions ++= Seq(
     "-encoding",
@@ -28,7 +28,6 @@ lazy val commonSettings = Seq(
 lazy val root = (project in file("."))
   .settings(commonSettings ++ Seq(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
       "com.lightbend.akka" %% "akka-stream-alpakka-xml" % AlpakkaXmlVersion,
       "com.typesafe.akka" %% "akka-stream-contrib" % AkkaContribVersion,
     ) ++ Seq(
