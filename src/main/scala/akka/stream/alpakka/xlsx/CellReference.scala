@@ -18,7 +18,7 @@ object CellReference {
     def splitCellReference(reference: String) = {
       val referenceColumn = reference.filterNot(c => c >= '0' && c <= '9')
 
-      if (reference.length == 0 || referenceColumn.length == 0 || referenceColumn.length == reference.length) None
+      if (reference.isEmpty || referenceColumn.isEmpty || referenceColumn.length == reference.length) None
       else Some((reference, referenceColumn, reference.substring(referenceColumn.length)))
     }
 
