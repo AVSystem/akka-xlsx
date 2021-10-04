@@ -70,9 +70,9 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
                                           allowedZipExtensions: immutable.Seq[String])
     extends GraphStageWithMaterializedValue[SourceShape[(ZipEntryData, ByteString)], Future[Long]] {
 
-  val matValue = Promise[Long]()
+  private val matValue = Promise[Long]()
 
-  override val shape =
+  override val shape: SourceShape[(ZipEntryData, ByteString)] =
     SourceShape(Outlet[(ZipEntryData, ByteString)]("zipInputStreamSource.out"))
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[Long]) = {
@@ -118,9 +118,6 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
             fillBuffer(maxBuffer)
             buffer match {
               case Seq() =>
-                finalize()
-              case head +: Seq() =>
-                push(out, head)
                 finalize()
               case head +: tail =>
                 push(out, head)
