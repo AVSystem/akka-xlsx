@@ -77,7 +77,8 @@ object XlsxParsing {
       sstSink: Sink[(Int, String), Future[Map[Int, String]]]
   )(implicit materializer: Materializer, executionContext: ExecutionContext): Source[Row, NotUsed] = {
     val nextStepInputStream = new PipedInputStream()
-    source.to(StreamConverters.fromOutputStream(() => new PipedOutputStream(nextStepInputStream))).run()
+    val outputStream = new PipedOutputStream(nextStepInputStream)
+    source.to(StreamConverters.fromOutputStream(() => outputStream)).run()
     readFromStream(ZipInputStreamSource(() => new ZipInputStream(nextStepInputStream)), sheetType, sstSink)
   }
 

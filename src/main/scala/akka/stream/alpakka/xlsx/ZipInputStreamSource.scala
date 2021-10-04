@@ -1,6 +1,5 @@
 package akka.stream.alpakka.xlsx
 
-import java.util.zip.{ZipEntry, ZipInputStream}
 import akka.stream.Attributes.{InputBuffer, name}
 import akka.stream.alpakka.xlsx.ZipInputStreamSource.ZipEntryData
 import akka.stream.impl.Stages.DefaultAttributes.IODispatcher
@@ -10,6 +9,7 @@ import akka.stream.{Attributes, Outlet, SourceShape}
 import akka.util.ByteString
 import akka.util.ByteString.ByteString1C
 
+import java.util.zip.{ZipEntry, ZipInputStream}
 import scala.annotation.{nowarn, tailrec}
 import scala.collection.immutable
 import scala.concurrent.{Future, Promise}
