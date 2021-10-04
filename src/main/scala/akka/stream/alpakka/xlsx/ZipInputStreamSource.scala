@@ -19,6 +19,9 @@ import scala.util.control.NonFatal
 /**
  * This companion defines a factory for [[ZipInputStreamSource]] instances,
  * see [[ZipInputStreamSource.apply]].
+ *
+ * Original (modified):
+ * https://github.com/akka/akka-stream-contrib/blob/2056b724bccc8c9c0a3d8d2419fe6b166e4cec57/src/main/scala/akka/stream/contrib/ZipInputStreamSource.scala
  */
 object ZipInputStreamSource {
 
@@ -89,7 +92,7 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
       private val buffer = ListBuffer.empty[(ZipEntryData, ByteString)]
       private var eof: Boolean = false
       private var currentEntry: Option[ZipEntry] = None
-      private var currentStreams: Seq[ZipInputStream] = Seq()
+      private var currentStreams: List[ZipInputStream] = Nil
 
       override def preStart(): Unit = {
         super.preStart()
@@ -116,42 +119,39 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
         new OutHandler {
           override def onPull(): Unit = {
             fillBuffer(maxBuffer)
-            if(buffer.isEmpty) finalize()
-            else {
-              push(out, buffer.head)
-              buffer.dropInPlace(1)
-            }
-            def finalize(): Unit =
+            if (buffer.isEmpty) {
               try {
                 is.close()
               } finally {
                 matValue.success(readBytesTotal)
                 complete(out)
               }
+            } else {
+              push(out, buffer.head)
+              buffer.dropInPlace(1)
+            }
           }
 
-          override def onDownstreamFinish(cause: Throwable): Unit = {
+          override def onDownstreamFinish(cause: Throwable): Unit =
             try {
               is.close()
             } finally {
               matValue.success(readBytesTotal)
               super.onDownstreamFinish(cause)
             }
-          }
         }
-      ) // end of handler
+      )
 
-      //todo
-      @tailrec private def nextEntry(streams: Seq[ZipInputStream]): (Option[ZipEntry], Seq[ZipInputStream]) =
+      @tailrec private def nextEntry(streams: List[ZipInputStream]): (Option[ZipEntry], List[ZipInputStream]) =
         streams match {
-          case Seq() => (None, streams)
-          case (z :: zs) =>
-            val entry = Option(z.getNextEntry)
+          case Nil => (None, streams)
+          case hd :: tail =>
+            val entry = Option(hd.getNextEntry)
             entry match {
               case None =>
-                nextEntry(zs)
+                nextEntry(tail)
               case Some(e) if isZipFile(e) =>
-                nextEntry(new ZipInputStream(z) +: streams)
+                nextEntry(new ZipInputStream(hd) +: streams)
               case Some(e) if e.isDirectory =>
                 nextEntry(streams)
               case _ =>
@@ -163,19 +163,16 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
 
       /** BLOCKING I/O READ */
       private def readChunk(): Unit = {
-        def read(arr: Array[Byte]) = currentStreams.headOption.flatMap { stream =>
-          val readBytes = stream.read(arr)
-          if (readBytes == -1) {
-            val (entry, streams) = nextEntry(currentStreams)
-            currentStreams = streams
-            currentEntry = entry
-            entry.map(zipEntry => {
-              (zipEntry, streams.head.read(arr))
-            })
-          } else {
-            Some((currentEntry.get, readBytes))
+        def read(arr: Array[Byte]): Option[(ZipEntry, Int)] =
+          currentStreams.headOption.flatMap { stream =>
+            val readBytes = stream.read(arr)
+            if (readBytes == -1) {
+              val (entry, streams) = nextEntry(currentStreams)
+              currentStreams = streams
+              currentEntry = entry
+              entry.map(_ -> streams.head.read(arr))
+            } else Some((currentEntry.get, readBytes))
           }
-        }
         val arr = Array.ofDim[Byte](chunkSize)
         read(arr) match {
           case None =>
@@ -190,13 +187,12 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
                 ByteString1C(arr).take(readBytes)
             buffer.append((entryData, chunk))
         }
-      } // readChunk
+      }
 
       private def fillBuffer(size: Int): Unit =
         while (buffer.length < size && !eof) {
           readChunk()
         }
-
     }
 
     (logic, matValue.future)
