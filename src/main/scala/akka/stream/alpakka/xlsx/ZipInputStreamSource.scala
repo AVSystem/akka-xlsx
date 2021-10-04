@@ -10,7 +10,7 @@ import akka.util.ByteString
 import akka.util.ByteString.ByteString1C
 
 import java.util.zip.{ZipEntry, ZipInputStream}
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.concurrent.{Future, Promise}
 import scala.util.control.NonFatal
@@ -75,7 +75,7 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
   override val shape =
     SourceShape(Outlet[(ZipEntryData, ByteString)]("zipInputStreamSource.out"))
 
-  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes) = {
+  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[Long]) = {
 
     val InputBuffer(initialBuffer, maxBuffer) =
       inheritedAttributes.getAttribute(classOf[InputBuffer], InputBuffer(16, 16))
@@ -85,7 +85,7 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
 
       private var is: ZipInputStream = null
       private var readBytesTotal: Long = 0L
-      private var buffer: Vector[(ZipEntryData, ByteString)] = Vector.empty
+      private var buffer: Vector[(ZipEntryData, ByteString)] = Vector.empty //todo mutable
       private var eof: Boolean = false
       private var currentEntry: Option[ZipEntry] = None
       private var currentStreams: Seq[ZipInputStream] = Seq()
@@ -129,7 +129,7 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
                 //todo
                 throw new IllegalStateException("wtf")
             }
-            def finalize() =
+            def finalize(): Unit =
               try {
                 is.close()
               } finally {
@@ -138,17 +138,18 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
               }
           }
 
-          //todo
-          @nowarn override def onDownstreamFinish(): Unit =
+          override def onDownstreamFinish(cause: Throwable): Unit = {
             try {
               is.close()
             } finally {
               matValue.success(readBytesTotal)
-              super.onDownstreamFinish()
+              super.onDownstreamFinish(cause)
             }
+          }
         }
       ) // end of handler
 
+      //todo
       @tailrec private def nextEntry(streams: Seq[ZipInputStream]): (Option[ZipEntry], Seq[ZipInputStream]) =
         streams match {
           case Seq() => (None, streams)
@@ -166,13 +167,10 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
             }
         }
 
-      private def isZipFile(e: ZipEntry) = {
-        val name = e.getName.toLowerCase
-        allowedZipExtensions.exists(name.endsWith)
-      }
+      private def isZipFile(e: ZipEntry) = allowedZipExtensions.exists(e.getName.toLowerCase.endsWith)
 
       /** BLOCKING I/O READ */
-      private def readChunk() = {
+      private def readChunk(): Unit = {
         def read(arr: Array[Byte]) = currentStreams.headOption.flatMap { stream =>
           val readBytes = stream.read(arr)
           if (readBytes == -1) {
@@ -202,7 +200,7 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
         }
       } // readChunk
 
-      private def fillBuffer(size: Int) =
+      private def fillBuffer(size: Int): Unit =
         while (buffer.length < size && !eof) {
           readChunk()
         }

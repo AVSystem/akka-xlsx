@@ -77,6 +77,7 @@ object XlsxParsing {
       sstSink: Sink[(Int, String), Future[Map[Int, String]]]
   )(implicit materializer: Materializer, executionContext: ExecutionContext): Source[Row, NotUsed] = {
     val nextStepInputStream = new PipedInputStream()
+    //Don't inline! Pipe needs to be connected before reading, otherwise `java.io.IOException: Pipe not connected` is possible
     val outputStream = new PipedOutputStream(nextStepInputStream)
     source.to(StreamConverters.fromOutputStream(() => outputStream)).run()
     readFromStream(ZipInputStreamSource(() => new ZipInputStream(nextStepInputStream)), sheetType, sstSink)
