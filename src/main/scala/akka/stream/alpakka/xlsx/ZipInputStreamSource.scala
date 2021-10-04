@@ -12,6 +12,7 @@ import akka.util.ByteString.ByteString1C
 import java.util.zip.{ZipEntry, ZipInputStream}
 import scala.annotation.tailrec
 import scala.collection.immutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.{Future, Promise}
 import scala.util.control.NonFatal
 
@@ -85,7 +86,7 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
 
       private var is: ZipInputStream = null
       private var readBytesTotal: Long = 0L
-      private var buffer: Vector[(ZipEntryData, ByteString)] = Vector.empty //todo mutable
+      private val buffer = ListBuffer.empty[(ZipEntryData, ByteString)]
       private var eof: Boolean = false
       private var currentEntry: Option[ZipEntry] = None
       private var currentStreams: Seq[ZipInputStream] = Seq()
@@ -113,18 +114,12 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
       setHandler(
         out,
         new OutHandler {
-
           override def onPull(): Unit = {
             fillBuffer(maxBuffer)
-            buffer match {
-              case Seq() =>
-                finalize()
-              case head +: tail =>
-                push(out, head)
-                buffer = tail
-              case _ =>
-                //todo
-                throw new IllegalStateException("wtf")
+            if(buffer.isEmpty) finalize()
+            else {
+              push(out, buffer.head)
+              buffer.dropInPlace(1)
             }
             def finalize(): Unit =
               try {
@@ -193,7 +188,7 @@ final class ZipInputStreamSource private (in: () => ZipInputStream,
                 ByteString1C(arr)
               else
                 ByteString1C(arr).take(readBytes)
-            buffer :+= ((entryData, chunk))
+            buffer.append((entryData, chunk))
         }
       } // readChunk
 
