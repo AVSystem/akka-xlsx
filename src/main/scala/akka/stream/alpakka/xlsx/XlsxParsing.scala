@@ -2,13 +2,11 @@ package akka.stream.alpakka.xlsx
 
 import java.io.{FileNotFoundException, PipedInputStream, PipedOutputStream}
 import java.util.zip.{ZipFile, ZipInputStream}
-
 import akka.NotUsed
 import akka.stream.Materializer
+import akka.stream.alpakka.xlsx.ZipInputStreamSource.ZipEntryData
 import akka.stream.alpakka.xml.scaladsl.XmlParsing
-import akka.stream.alpakka.xml.{ Characters, EndElement, StartElement }
-import akka.stream.contrib.ZipInputStreamSource
-import akka.stream.contrib.ZipInputStreamSource.ZipEntryData
+import akka.stream.alpakka.xml.{Characters, EndElement, StartElement}
 import akka.stream.scaladsl.{Sink, Source, StreamConverters}
 import akka.util.ByteString
 
@@ -79,7 +77,9 @@ object XlsxParsing {
       sstSink: Sink[(Int, String), Future[Map[Int, String]]]
   )(implicit materializer: Materializer, executionContext: ExecutionContext): Source[Row, NotUsed] = {
     val nextStepInputStream = new PipedInputStream()
-    source.to(StreamConverters.fromOutputStream(() => new PipedOutputStream(nextStepInputStream))).run()
+    //Don't inline! Pipe needs to be connected before reading, otherwise `java.io.IOException: Pipe not connected` is possible
+    val outputStream = new PipedOutputStream(nextStepInputStream)
+    source.to(StreamConverters.fromOutputStream(() => outputStream)).run()
     readFromStream(ZipInputStreamSource(() => new ZipInputStream(nextStepInputStream)), sheetType, sstSink)
   }
 
