@@ -1,18 +1,13 @@
 package demo
 
+import akka.stream.alpakka.xlsx.{Cell, XlsxParsing}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.connectors.xml._
+import org.apache.pekko.stream.scaladsl.Sink
+
 import java.nio.file.Paths
 import java.util.zip.ZipFile
-
-import akka.Done
-import akka.actor.ActorSystem
-import akka.stream.{ ActorMaterializer, Materializer }
-import akka.stream.alpakka.xml._
-import akka.stream.alpakka.xml.scaladsl.XmlParsing
-import akka.stream.scaladsl.{ Sink, StreamConverters }
-import akka.stream.alpakka.xlsx._
-
-import scala.collection.mutable
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
 
 object Main {
 

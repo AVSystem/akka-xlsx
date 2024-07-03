@@ -1,12 +1,13 @@
 package akka.stream.alpakka.xlsx
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
-import akka.stream.scaladsl.Keep
-import akka.stream.testkit.scaladsl.TestSink
-import akka.testkit.TestDuration
+import org.apache.pekko.connectors.xlsx.ZipInputStreamSource
+import org.apache.pekko.stream.scaladsl.Keep
+import org.apache.pekko.stream.testkit.scaladsl.TestSink
+import org.apache.pekko.testkit.TestDuration
 import org.scalatest.Assertion
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 

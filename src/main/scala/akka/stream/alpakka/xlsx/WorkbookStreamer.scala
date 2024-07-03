@@ -1,14 +1,15 @@
 package akka.stream.alpakka.xlsx
 
+
+import org.apache.pekko.connectors.xlsx.ZipInputStreamSource.ZipEntryData
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.connectors.xml.javadsl.XmlParsing
+import org.apache.pekko.stream.connectors.xml.{EndElement, ParseEvent, StartElement}
+import org.apache.pekko.stream.scaladsl.{Source, StreamConverters}
+import org.apache.pekko.util.ByteString
+
 import java.io.FileNotFoundException
 import java.util.zip.ZipFile
-import akka.stream.Materializer
-import akka.stream.alpakka.xlsx.ZipInputStreamSource.ZipEntryData
-import akka.stream.alpakka.xml.javadsl.XmlParsing
-import akka.stream.alpakka.xml.{EndElement, ParseEvent, StartElement}
-import akka.stream.scaladsl.{Source, StreamConverters}
-import akka.util.ByteString
-
 import scala.concurrent.Future
 import scala.util.Try
 

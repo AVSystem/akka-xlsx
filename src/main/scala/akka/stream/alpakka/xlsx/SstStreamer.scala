@@ -1,13 +1,13 @@
 package akka.stream.alpakka.xlsx
 
-import java.util.zip.ZipFile
-import akka.stream.Materializer
-import akka.stream.alpakka.xlsx.ZipInputStreamSource.ZipEntryData
-import akka.stream.alpakka.xml.scaladsl.XmlParsing
-import akka.stream.alpakka.xml.{Characters, EndElement, StartElement}
-import akka.stream.scaladsl.{Keep, Sink, Source, StreamConverters}
-import akka.util.ByteString
+import org.apache.pekko.connectors.xlsx.ZipInputStreamSource.ZipEntryData
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.connectors.xml.scaladsl.XmlParsing
+import org.apache.pekko.stream.connectors.xml.{Characters, EndElement, StartElement}
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source, StreamConverters}
+import org.apache.pekko.util.ByteString
 
+import java.util.zip.ZipFile
 import scala.concurrent.{ExecutionContext, Future}
 
 object SstStreamer {

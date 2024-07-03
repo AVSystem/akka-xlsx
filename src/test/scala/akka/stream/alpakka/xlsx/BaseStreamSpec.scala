@@ -1,9 +1,9 @@
 package akka.stream.alpakka.xlsx
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.BeforeAndAfterAll
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
