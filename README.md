@@ -1,9 +1,5 @@
 # Alpakka XLSX Reader
 
-**NOT FOR PRODUCTION USE, YET**
-
-Currently this project provides a yet incomplete way of reading Excel files.
-
 Things to do:
 
 * [ ] Better XLSX file format detection

@@ -1,10 +1,10 @@
 package akka.stream.alpakka.xlsx
 
-import akka.stream.alpakka.xml.Attribute
+import org.apache.pekko.stream.connectors.xml.Attribute
 import org.scalacheck.Gen
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 final class CellReferenceTest extends AnyWordSpec with Matchers with ScalaCheckDrivenPropertyChecks {
   "CellReference" should {

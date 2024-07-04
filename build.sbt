@@ -1,14 +1,16 @@
 name := "akka-xlsx"
 
-lazy val AlpakkaXmlVersion = "3.0.3"
-lazy val AkkaTestkitVersion = "2.6.16"
-lazy val ScalatestVersion = "3.2.3"
-lazy val ScalatestPlusVersion = "3.2.3.0"
-lazy val ScalacheckVersion = "1.15.2"
+lazy val PekkoXmlVersion = "1.0.2"
+//Override transitive dependency to fix statefulMapConcat issue from 1.0.2.
+// Can be removed when pekko-xml 1.0.3+ is released.
+lazy val PekkoStreamVersion = "1.0.3"
+lazy val PekkoTestkitVersion = "1.0.3"
+lazy val ScalatestVersion = "3.2.19"
+lazy val ScalatestPlusVersion = "3.2.19.0"
 
 lazy val commonSettings = Seq(
   updateOptions := updateOptions.value.withGigahorse(false),
-  scalaVersion := "2.13.6",
+  scalaVersion := "2.13.14",
   organization := "de.envisia.akka",
   scalacOptions ++= Seq(
     "-encoding",
@@ -18,7 +20,7 @@ lazy val commonSettings = Seq(
     "-deprecation",
     "-Xfatal-warnings",
   ),
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-o"),
+  Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-o"),
   publishMavenStyle := true,
   pomIncludeRepository := (_ => false),
 )
@@ -26,12 +28,12 @@ lazy val commonSettings = Seq(
 lazy val root = (project in file("."))
   .settings(commonSettings ++ Seq(
     libraryDependencies ++= Seq(
-      "com.lightbend.akka" %% "akka-stream-alpakka-xml" % AlpakkaXmlVersion,
+      "org.apache.pekko" %% "pekko-connectors-xml" % PekkoXmlVersion,
+      "org.apache.pekko" %% "pekko-stream" % PekkoStreamVersion,
     ) ++ Seq(
-      "com.typesafe.akka" %% "akka-stream-testkit" % AkkaTestkitVersion,
+      "org.apache.pekko" %% "pekko-stream-testkit" % PekkoTestkitVersion,
       "org.scalatest" %% "scalatest" % ScalatestVersion,
-      "org.scalatestplus" %% "scalacheck-1-15" % ScalatestPlusVersion,
-      "org.scalacheck" %% "scalacheck" % ScalacheckVersion,
+      "org.scalatestplus" %% "scalacheck-1-18" % ScalatestPlusVersion,
     ).map(_ % Test)
   ))
 

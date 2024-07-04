@@ -1,9 +1,8 @@
 package akka.stream.alpakka.xlsx
 
+import org.apache.pekko.stream.connectors.xml.Attribute
+
 import java.util.Locale
-
-import akka.stream.alpakka.xml.Attribute
-
 import scala.annotation.tailrec
 import scala.util.Try
 
