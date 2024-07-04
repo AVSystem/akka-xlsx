@@ -1,7 +1,9 @@
 name := "akka-xlsx"
 
 lazy val PekkoXmlVersion = "1.0.2"
-lazy val PekkoStreamVersion = "1.0.3" //fixes statefulMapConcat issue from pekko-stream 1.0.2
+//Override transitive dependency to fix statefulMapConcat issue from 1.0.2.
+// Can be removed when pekko-xml 1.0.3+ is released.
+lazy val PekkoStreamVersion = "1.0.3"
 lazy val PekkoTestkitVersion = "1.0.3"
 lazy val ScalatestVersion = "3.2.19"
 lazy val ScalatestPlusVersion = "3.2.19.0"
